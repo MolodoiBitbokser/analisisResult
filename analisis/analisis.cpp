@@ -7,7 +7,7 @@
 using namespace std;
 
 const int N = 3; // Size of matrices
-
+/*
 void decodePairName(string pairName, int& i, int& j) {
     try {
         i = stoi(pairName.substr(0, 1));
@@ -19,15 +19,55 @@ void decodePairName(string pairName, int& i, int& j) {
         i = 0;
         j = 0;
     }
+}*/
+
+void decodePairName(string pairName, int& i, int& j) {
+    try {
+        if (pairName.size() == 5 && isdigit(pairName[0]) && isdigit(pairName[1])) {
+            i = stoi(pairName.substr(0, 1));
+            j = stoi(pairName.substr(1, 1));
+        }
+        else {
+            // Handle the error appropriately, such as setting i and j to default values
+            i = 0;
+            j = 0;
+        }
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << "Invalid argument: " << e.what() << std::endl;
+        // Handle the error appropriately, such as setting i and j to default values
+        i = 0;
+        j = 0;
+    }
 }
 
-// Function to multiply a matrix by a subgroup
+/* Function to multiply a matrix by a subgroup
 vector<vector<int>> multiplyMatrix(vector<vector<int>> matrix, int subgroup) {
     vector<vector<int>> result(N, vector<int>(N));
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             result[i][j] = matrix[(static_cast<std::vector<std::vector<int, std::allocator<int>>, std::allocator<std::vector<int, std::allocator<int>>>>::size_type>(i) + j) % N]
                 [(static_cast<std::vector<int, std::allocator<int>>::size_type>(i) * j + subgroup) % N];
+        }
+    }
+    return result;
+}*/
+
+vector<vector<int>> multiplyMatrix(vector<vector<int>> matrix, int subgroup) {
+    vector<vector<int>> result(N, vector<int>(N));
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            // Calculate indices with bounds checking
+            int row = (i + j) % N;
+            int col = (i * j + subgroup) % N;
+            if (row < 0 || row >= N || col < 0 || col >= N) {
+                // Handle out-of-bounds error
+                std::cerr << "Error: out-of-bounds index (" << row << ", " << col << ")" << std::endl;
+                result[i][j] = 0; // Set default value
+            }
+            else {
+                result[i][j] = matrix[row][col];
+            }
         }
     }
     return result;
@@ -70,9 +110,16 @@ int main()
                 if (!line.empty()) {
                     try {
                         if (static_cast<unsigned long long>(pos) + 1 <= line.size()) {
-                            num = stoi(line.substr(pos, 1));
-                            matrix[static_cast<std::vector<int, std::allocator<int>>::size_type>(i) * N + j] = num;
-                            pos += 2;
+                            if (isdigit(line[pos])) {
+                                num = stoi(line.substr(pos, 1));
+                                matrix[static_cast<std::vector<int, std::allocator<int>>::size_type>(i) * N + j] = num;
+                                pos += 2;
+                            }
+                            else {
+                                // Handle the error appropriately, such as setting num to a default value
+                                num = 0;
+                                pos += 2;
+                            }
                         }
                         else {
                             // Handle the error appropriately, such as setting num to a default value
@@ -145,9 +192,14 @@ int main()
                 }
                 resultAnalysisFile << pairName1 << " = " << pairName2 << " is a duplicate" << endl;
                 resultAnalysisFile << "The ratio for the forming matrices is:" << endl;
-                for (int i = 0; i < N; i++) {
+                for (int i = 1; i < N; i++) {
                     for (int j = 0; j < N; j++) {
-                        resultAnalysisFile << matrix1[i][j] / matrix2[i][j] << " ";
+                        if (matrix2[i][j] != 0) {
+                            resultAnalysisFile << matrix1[i][j] / matrix2[i][j] << " ";
+                        }
+                        else {
+                            resultAnalysisFile << "N/A ";
+                        }
                     }
                     resultAnalysisFile << endl;
                 }
